@@ -1,5 +1,5 @@
 use game_template_platform::GameState;
-use ggez::conf::{Backend, WindowMode};
+use ggez::conf::{Backend, WindowMode, WindowSetup};
 use ggez::{event, ContextBuilder, GameResult};
 
 fn main() -> GameResult {
@@ -8,9 +8,11 @@ fn main() -> GameResult {
         .maximized(true)
         .resizable(true);
     let backend = Backend::default().version(3, 1).gles();
+    let window_setup = WindowSetup::default().vsync(false);
     let (context, event_loop) = &mut match ContextBuilder::new("Platform Template", "Brooks Patton")
         .window_mode(window_mode)
         .backend(backend)
+        .window_setup(window_setup)
         .build()
     {
         Ok((context, event_loop)) => (context, event_loop),
