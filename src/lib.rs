@@ -41,11 +41,12 @@ impl EventHandler for GameState {
             println!("fps: {} - circle count: {}", fps, self.circles.len());
         }
 
+        let screen_size = ggez::graphics::drawable_size(context);
         while ggez::timer::check_update_time(context, 30) {
             let gravity = self.gravity;
             self.circles
                 .iter_mut()
-                .for_each(|circle| circle.update(gravity));
+                .for_each(|circle| circle.update(gravity, screen_size));
         }
 
         Ok(())
