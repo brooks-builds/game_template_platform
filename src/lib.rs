@@ -9,6 +9,7 @@ use ggez::{Context, GameResult};
 pub struct GameState {
     circle: Mesh,
     circles: Vec<GameObject>,
+    gravity: f32,
 }
 
 impl GameState {
@@ -25,6 +26,7 @@ impl GameState {
         Ok(Self {
             circle,
             circles: vec![],
+            gravity: 1.0,
         })
     }
 }
@@ -33,14 +35,17 @@ impl EventHandler for GameState {
     fn update(&mut self, context: &mut Context) -> GameResult {
         if ggez::timer::ticks(context) % 200 == 0 {
             let fps = ggez::timer::fps(context);
-            if fps > 60.0 {
+            if fps > 59.0 {
                 self.circles.push(GameObject::new(50.0, 50.0));
             }
             println!("fps: {} - circle count: {}", fps, self.circles.len());
         }
 
         while ggez::timer::check_update_time(context, 30) {
-            self.circles.iter_mut().for_each(GameObject::update);
+            let gravity = self.gravity;
+            self.circles
+                .iter_mut()
+                .for_each(|circle| circle.update(gravity));
         }
 
         Ok(())

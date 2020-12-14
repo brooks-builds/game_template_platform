@@ -21,7 +21,8 @@ impl GameObject {
         ggez::graphics::draw(context, mesh, DrawParam::new().dest(self.location))
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, gravity: f32) {
+        self.velocity.y += gravity;
         self.location.x += self.velocity.x;
         self.location.y += self.velocity.y;
     }
