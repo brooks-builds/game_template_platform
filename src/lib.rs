@@ -1,65 +1,49 @@
-mod game_object;
+mod draw_system;
+mod drawables;
+mod entity;
+mod world;
 
-use game_object::GameObject;
+use draw_system::player_draw_system::PlayerDrawSystem;
+use drawables::Drawables;
+use entity::Entity;
 use ggez::event::EventHandler;
-use ggez::graphics::{Color, DrawMode, Mesh, MeshBuilder, BLACK};
+use ggez::graphics::{Color, DrawMode, Drawable, Mesh, MeshBuilder, BLACK};
 use ggez::mint::Point2;
 use ggez::{Context, GameResult};
+use world::World;
 
 pub struct GameState {
-    circle: Mesh,
-    circles: Vec<GameObject>,
-    gravity: f32,
+    world: World,
+    drawables: Drawables,
 }
 
 impl GameState {
     pub fn new(context: &mut Context) -> GameResult<Self> {
-        let circle = MeshBuilder::new()
-            .circle(
-                DrawMode::fill(),
-                Point2 { x: 0.0, y: 0.0 },
-                5.0,
-                0.1,
-                Color::new(0.8, 0.3, 0.5, 1.0),
-            )
-            .build(context)?;
-        Ok(Self {
-            circle,
-            circles: vec![],
-            gravity: 1.0,
-        })
+        let mut world = World::default().set_gravity(1.0);
+        let drawables = Drawables::new(context)?;
+
+        // create player
+        let player = Entity::default()
+            .set_location(50.0, 50.0)
+            .set_draw_system(Box::new(PlayerDrawSystem));
+        // add player to world
+        world.add_entity(player);
+
+        Ok(Self { world, drawables })
     }
 }
 
 impl EventHandler for GameState {
     fn update(&mut self, context: &mut Context) -> GameResult {
-        if ggez::timer::ticks(context) % 200 == 0 {
-            let fps = ggez::timer::fps(context);
-            if fps > 59.0 {
-                self.circles.push(GameObject::new(50.0, 50.0));
-            } else if fps < 59.0 {
-                self.circles.pop();
-            }
-            println!("fps: {} - circle count: {}", fps, self.circles.len());
-        }
-
-        let screen_size = ggez::graphics::drawable_size(context);
-        while ggez::timer::check_update_time(context, 30) {
-            let gravity = self.gravity;
-            self.circles
-                .iter_mut()
-                .for_each(|circle| circle.update(gravity, screen_size));
-        }
-
+        // update world
         Ok(())
     }
 
     fn draw(&mut self, context: &mut Context) -> GameResult {
         ggez::graphics::clear(context, BLACK);
 
-        for circle in &self.circles {
-            circle.draw(context, &self.circle)?;
-        }
+        // draw the world
+        self.world.draw(context, &self.drawables)?;
 
         ggez::graphics::present(context)
     }
