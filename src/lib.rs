@@ -37,6 +37,8 @@ impl EventHandler for GameState {
             let fps = ggez::timer::fps(context);
             if fps > 59.0 {
                 self.circles.push(GameObject::new(50.0, 50.0));
+            } else if fps < 59.0 {
+                self.circles.pop();
             }
             println!("fps: {} - circle count: {}", fps, self.circles.len());
         }
