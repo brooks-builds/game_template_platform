@@ -1,9 +1,11 @@
 use ggez::graphics::{DrawParam, Mesh, Rect};
 use ggez::mint::Point2;
+use ggez::nalgebra::Vector2;
 use ggez::{Context, GameResult};
 
 use crate::draw_system::DrawSystem;
 use crate::drawables::Drawables;
+use crate::physics_system::PhysicsSystem;
 use crate::GameState;
 
 #[derive(Debug)]
@@ -28,6 +30,16 @@ impl Entity {
         self
     }
 
+    pub fn set_affected_by_gravity(mut self) -> Self {
+        self.affected_by_gravity = true;
+        self
+    }
+
+    pub fn set_physics_system(mut self, physics_system: Box<dyn PhysicsSystem>) -> Self {
+        self.physics_system = Some(physics_system);
+        self
+    }
+
     pub fn draw(&self, context: &mut Context, drawables: &Drawables) -> GameResult {
         if let Some(draw_system) = &self.draw_system {
             draw_system.draw(drawables, context, &self.location)?;
@@ -36,11 +48,13 @@ impl Entity {
         Ok(())
     }
 
-    pub fn update(&mut self, gravity: Point2<f32>) {
-        if let Some(physics_system) = self.physics_system {
+    pub fn update(&mut self, gravity: &Vector2<f32>) {
+        if let Some(physics_system) = &mut self.physics_system {
             if self.affected_by_gravity {
                 physics_system.apply_force(gravity);
             }
+
+            physics_system.update(&mut self.location);
         }
     }
 }
@@ -50,11 +64,13 @@ impl Default for Entity {
         let location = Rect::new(0.0, 0.0, 0.0, 0.0);
         let draw_system = None;
         let affected_by_gravity = false;
+        let physics_system = None;
 
         Self {
             location,
             draw_system,
             affected_by_gravity,
+            physics_system,
         }
     }
 }
@@ -62,6 +78,7 @@ impl Default for Entity {
 #[cfg(test)]
 mod test {
     use crate::draw_system::player_draw_system::PlayerDrawSystem;
+    use crate::physics_system::player_physics_system::PlayerPhysicsSystem;
 
     use super::*;
 
@@ -84,5 +101,21 @@ mod test {
         let player_draw_system = Box::new(PlayerDrawSystem);
         entity = entity.set_draw_system(player_draw_system);
         assert!(!matches!(entity.draw_system, None));
+    }
+
+    #[test]
+    fn ci_test_making_entity_affected_by_gravity() {
+        let mut entity = Entity::default();
+        assert_eq!(entity.affected_by_gravity, false);
+        entity = entity.set_affected_by_gravity();
+        assert_eq!(entity.affected_by_gravity, true);
+    }
+
+    #[test]
+    fn ci_test_add_player_physics_system() {
+        let mut entity = Entity::default();
+        assert!(matches!(entity.physics_system, None));
+        entity = entity.set_physics_system(Box::new(PlayerPhysicsSystem::default()));
+        assert!(!matches!(entity.physics_system, None));
     }
 }
