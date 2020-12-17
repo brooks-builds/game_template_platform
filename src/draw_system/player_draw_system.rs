@@ -1,5 +1,4 @@
-use ggez::graphics::{draw, Color, DrawMode, DrawParam, Mesh, MeshBuilder, Rect};
-use ggez::mint::Point2;
+use ggez::graphics::{draw, DrawParam, Rect};
 use ggez::{Context, GameResult};
 
 use crate::drawables::Drawables;
@@ -23,7 +22,6 @@ impl DrawSystem for PlayerDrawSystem {
         let mut y = location.y;
         if let Some(physics_system) = physics_system {
             let part_velocity = physics_system.get_velocity() * lag;
-            dbg!(&part_velocity);
             x += part_velocity.x;
             y += part_velocity.y;
         }

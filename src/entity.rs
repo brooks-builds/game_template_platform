@@ -1,12 +1,10 @@
-use ggez::graphics::{DrawParam, Mesh, Rect};
-use ggez::mint::Point2;
+use ggez::graphics::Rect;
 use ggez::nalgebra::Vector2;
 use ggez::{Context, GameResult};
 
 use crate::draw_system::DrawSystem;
 use crate::drawables::Drawables;
 use crate::physics_system::PhysicsSystem;
-use crate::GameState;
 
 #[derive(Debug)]
 pub struct Entity {
