@@ -25,7 +25,9 @@ pub struct GameState {
 impl GameState {
     pub fn new(context: &mut Context) -> GameResult<Self> {
         let config = Config::default();
-        let mut world = World::default().set_gravity(config.gravity_force);
+        let mut world = World::default()
+            .set_gravity(config.gravity_force)
+            .set_size(config.world_width, config.world_height);
         let drawables = Drawables::new(context)?;
         let target_update_fps = config.target_update_fps;
 

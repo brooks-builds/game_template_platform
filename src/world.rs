@@ -7,12 +7,20 @@ use crate::entity::Entity;
 pub struct World {
     entities: Vec<Entity>,
     gravity: Vector2<f32>,
+    width: f32,
+    height: f32,
 }
 
 impl World {
     pub fn set_gravity(mut self, gravity: f32) -> Self {
         self.gravity.y = gravity;
 
+        self
+    }
+
+    pub fn set_size(mut self, width: f32, height: f32) -> Self {
+        self.width = width;
+        self.height = height;
         self
     }
 
@@ -38,8 +46,15 @@ impl Default for World {
     fn default() -> Self {
         let entities = vec![];
         let gravity = Vector2::new(0.0, 0.0);
+        let width = 5000.0;
+        let height = 5000.0;
 
-        Self { entities, gravity }
+        Self {
+            entities,
+            gravity,
+            width,
+            height,
+        }
     }
 }
 
@@ -66,5 +81,16 @@ mod test {
         gravity.y = 5.0;
         world = world.set_gravity(5.0);
         assert_eq!(world.gravity, gravity);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn ci_test_set_world_size() {
+        let mut world: World = World::default();
+        assert_eq!(world.width, 5000.0);
+        assert_eq!(world.height, 5000.0);
+        world = world.set_size(10_000.0, 7_000.0);
+        assert_eq!(world.width, 10_000.0);
+        assert_eq!(world.height, 7_000.0);
     }
 }
