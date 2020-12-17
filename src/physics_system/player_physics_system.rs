@@ -31,4 +31,8 @@ impl PhysicsSystem for PlayerPhysicsSystem {
         location.y += self.velocity.y;
         self.acceleration *= 0.0;
     }
+
+    fn get_velocity(&self) -> &Vector2<f32> {
+        &self.velocity
+    }
 }

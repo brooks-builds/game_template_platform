@@ -20,10 +20,10 @@ impl World {
         self.entities.push(entity);
     }
 
-    pub fn draw(&self, context: &mut Context, drawables: &Drawables) -> GameResult {
+    pub fn draw(&self, context: &mut Context, drawables: &Drawables, lag: f32) -> GameResult {
         self.entities
             .iter()
-            .try_for_each(|entity| entity.draw(context, drawables))
+            .try_for_each(|entity| entity.draw(context, drawables, lag))
     }
 
     pub fn update(&mut self) {

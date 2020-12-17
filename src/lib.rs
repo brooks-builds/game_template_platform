@@ -58,10 +58,9 @@ impl EventHandler for GameState {
     fn draw(&mut self, context: &mut Context) -> GameResult {
         ggez::graphics::clear(context, BLACK);
 
-        // draw the world
-        let remaining_time = ggez::timer::remaining_update_time(context);
-        dbg!(remaining_time);
-        self.world.draw(context, &self.drawables)?;
+        let lag = ggez::timer::remaining_update_time(context).as_secs_f32()
+            * self.target_update_fps as f32;
+        self.world.draw(context, &self.drawables, lag)?;
 
         ggez::graphics::present(context)
     }

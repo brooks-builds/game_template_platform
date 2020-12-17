@@ -40,9 +40,15 @@ impl Entity {
         self
     }
 
-    pub fn draw(&self, context: &mut Context, drawables: &Drawables) -> GameResult {
+    pub fn draw(&self, context: &mut Context, drawables: &Drawables, lag: f32) -> GameResult {
         if let Some(draw_system) = &self.draw_system {
-            draw_system.draw(drawables, context, &self.location)?;
+            draw_system.draw(
+                drawables,
+                context,
+                &self.location,
+                lag,
+                &self.physics_system,
+            )?;
         }
 
         Ok(())

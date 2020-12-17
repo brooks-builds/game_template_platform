@@ -5,8 +5,8 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        let target_update_fps = 2;
-        let gravity_force = 0.15;
+        let target_update_fps = 50;
+        let gravity_force = 0.1;
 
         Self {
             target_update_fps,
