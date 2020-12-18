@@ -13,8 +13,8 @@ impl Default for Config {
         let gravity_force = 0.1;
         let world_width = 5000.0;
         let world_height = 5000.0;
-        let world_unit_width = 10.0;
-        let world_unit_height = 10.0;
+        let world_unit_width = 50.0;
+        let world_unit_height = 50.0;
 
         Self {
             target_update_fps,

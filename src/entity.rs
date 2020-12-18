@@ -8,7 +8,7 @@ use crate::physics_system::PhysicsSystem;
 
 #[derive(Debug)]
 pub struct Entity {
-    location: Rect,
+    pub location: Rect,
     draw_system: Option<Box<dyn DrawSystem>>,
     affected_by_gravity: bool,
     physics_system: Option<Box<dyn PhysicsSystem>>,

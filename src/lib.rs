@@ -27,8 +27,9 @@ impl GameState {
         let config = Config::default();
         let mut world = World::default()
             .set_gravity(config.gravity_force)
-            .set_size(config.world_width, config.world_height);
-        let drawables = Drawables::new(context)?;
+            .set_size(config.world_width, config.world_height)
+            .set_unit_size(config.world_unit_width, config.world_unit_height);
+        let drawables = Drawables::new(context, &world)?;
         let target_update_fps = config.target_update_fps;
 
         // create player
