@@ -54,7 +54,7 @@ impl World {
 
     pub fn update(&mut self) {
         self.dest.x = -self.entities[0].location.x + 640.0;
-        self.dest.y -= 5.0;
+        self.dest.y = -self.entities[0].location.y + 350.0;
         let gravity = &self.gravity;
         self.entities
             .iter_mut()
