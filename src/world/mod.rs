@@ -1,15 +1,17 @@
-use ggez::graphics::{
-    apply_transformations, draw, pop_transform, push_transform, DrawParam, Mesh, Rect,
-};
+pub mod cell;
+pub mod grid;
+
+use ggez::graphics::{apply_transformations, draw, pop_transform, push_transform, DrawParam, Rect};
 use ggez::mint::Point2;
 use ggez::nalgebra::Vector2;
 use ggez::{Context, GameResult};
+use grid::Grid;
 
 use crate::drawables::Drawables;
 use crate::entity::Entity;
 
 pub struct World {
-    entities: Vec<Entity>,
+    grid: Grid,
     gravity: Vector2<f32>,
     pub width: f32,
     pub height: f32,
@@ -28,24 +30,27 @@ impl World {
     pub fn set_size(mut self, width: f32, height: f32) -> Self {
         self.width = width;
         self.height = height;
+        self.reset_grid();
         self
     }
 
     pub fn set_unit_size(mut self, width: f32, height: f32) -> Self {
         self.unit_width = width;
         self.unit_height = height;
+        self.reset_grid();
         self
     }
 
     pub fn add_entity(&mut self, entity: Entity) {
-        self.entities.push(entity);
+        self.grid.insert(entity);
     }
 
     pub fn draw(&self, context: &mut Context, drawables: &Drawables, lag: f32) -> GameResult {
         push_transform(context, Some(DrawParam::new().dest(self.dest).to_matrix()));
         apply_transformations(context)?;
         draw(context, &drawables.grid, DrawParam::new())?;
-        self.entities
+        let entities = self.grid.query(Rect::new(0.0, 0.0, 1280.0, 720.0));
+        entities
             .iter()
             .try_for_each(|entity| entity.draw(context, drawables, lag))?;
         pop_transform(context);
@@ -53,26 +58,31 @@ impl World {
     }
 
     pub fn update(&mut self) {
-        self.dest.x = -self.entities[0].location.x + 640.0;
-        self.dest.y = -self.entities[0].location.y + 350.0;
-        let gravity = &self.gravity;
-        self.entities
-            .iter_mut()
-            .for_each(|entity| entity.update(gravity));
+        // self.dest.x = -self.entities[0].location.x + 640.0;
+        // self.dest.y = -self.entities[0].location.y + 350.0;
+        // let gravity = &self.gravity;
+        // self.entities
+        //     .iter_mut()
+        //     .for_each(|entity| entity.update(gravity));
+    }
+
+    fn reset_grid(&mut self) {
+        let grid = Grid::new(self.width, self.height, self.unit_width, self.unit_height);
+        self.grid = grid;
     }
 }
 
 impl Default for World {
     fn default() -> Self {
-        let entities = vec![];
         let gravity = Vector2::new(0.0, 0.0);
         let width = 5000.0;
         let height = 5000.0;
         let unit_width = 1.0;
         let unit_height = 1.0;
+        let grid = Grid::new(width, height, unit_width, unit_height);
 
         Self {
-            entities,
+            grid,
             gravity,
             width,
             height,
@@ -86,16 +96,6 @@ impl Default for World {
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn ci_test_add_entity_to_world() {
-        let mut world = World::default();
-
-        assert_eq!(world.entities.len(), 0);
-        let entity = Entity::default();
-        world.add_entity(entity);
-        assert_eq!(world.entities.len(), 1);
-    }
 
     #[test]
     #[allow(clippy::float_cmp)]

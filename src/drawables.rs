@@ -1,4 +1,4 @@
-use ggez::graphics::{Color, DrawMode, Mesh, MeshBuilder, WHITE};
+use ggez::graphics::{Color, DrawMode, Mesh, MeshBuilder};
 use ggez::mint::Point2;
 use ggez::{Context, GameResult};
 
