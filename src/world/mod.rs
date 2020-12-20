@@ -1,8 +1,7 @@
 pub mod cell;
 pub mod grid;
 
-use ggez::graphics::{apply_transformations, draw, pop_transform, push_transform, DrawParam, Rect};
-use ggez::mint::Point2;
+use ggez::graphics::{draw, DrawParam, Rect};
 use ggez::nalgebra::Vector2;
 use ggez::{Context, GameResult};
 use grid::Grid;
@@ -17,7 +16,6 @@ pub struct World {
     pub height: f32,
     pub unit_width: f32,
     pub unit_height: f32,
-    dest: Point2<f32>,
 }
 
 impl World {
@@ -46,24 +44,23 @@ impl World {
     }
 
     pub fn draw(&self, context: &mut Context, drawables: &Drawables, lag: f32) -> GameResult {
-        push_transform(context, Some(DrawParam::new().dest(self.dest).to_matrix()));
-        apply_transformations(context)?;
+        // push_transform(context, Some(DrawParam::new().dest(self.dest).to_matrix()));
+        // apply_transformations(context)?;
         draw(context, &drawables.grid, DrawParam::new())?;
         let entities = self.grid.query(Rect::new(0.0, 0.0, 1280.0, 720.0));
         entities
             .iter()
             .try_for_each(|entity| entity.draw(context, drawables, lag))?;
-        pop_transform(context);
+        // pop_transform(context);
         Ok(())
     }
 
     pub fn update(&mut self) {
-        // self.dest.x = -self.entities[0].location.x + 640.0;
-        // self.dest.y = -self.entities[0].location.y + 350.0;
-        // let gravity = &self.gravity;
-        // self.entities
-        //     .iter_mut()
-        //     .for_each(|entity| entity.update(gravity));
+        let gravity = &self.gravity;
+        let mut entities = self.grid.get_all_entities_mut();
+        entities
+            .iter_mut()
+            .for_each(|entity| entity.update(gravity));
     }
 
     fn reset_grid(&mut self) {
@@ -88,7 +85,6 @@ impl Default for World {
             height,
             unit_width,
             unit_height,
-            dest: Point2 { x: 0.0, y: 0.0 },
         }
     }
 }

@@ -55,6 +55,17 @@ impl Grid {
 
         entities.into_iter().flatten().collect()
     }
+
+    pub fn get_all_entities_mut(&mut self) -> Vec<&mut Entity> {
+        let mut entities = vec![];
+
+        self.cells.iter_mut().for_each(|row| {
+            row.iter_mut()
+                .for_each(|cell| entities.push(cell.get_all_mut()));
+        });
+
+        entities.into_iter().flatten().collect()
+    }
 }
 
 #[cfg(test)]

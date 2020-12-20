@@ -20,6 +20,10 @@ impl Cell {
         self.entities.iter().collect()
     }
 
+    pub fn get_all_mut(&mut self) -> Vec<&mut Entity> {
+        self.entities.iter_mut().collect()
+    }
+
     pub fn insert(&mut self, entity: Entity) {
         self.entities.push(entity);
     }
