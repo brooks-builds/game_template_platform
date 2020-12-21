@@ -27,4 +27,8 @@ impl Cell {
     pub fn insert(&mut self, entity: Entity) {
         self.entities.push(entity);
     }
+
+    pub fn get_all_cloned(&self) -> Vec<Entity> {
+        self.entities.clone()
+    }
 }

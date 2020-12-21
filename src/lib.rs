@@ -6,11 +6,12 @@ mod physics_system;
 mod world;
 
 use config::Config;
+use draw_system::platform_draw_system::PlatformDrawSystem;
 use draw_system::player_draw_system::PlayerDrawSystem;
 use drawables::Drawables;
 use entity::Entity;
 use ggez::event::EventHandler;
-use ggez::graphics::BLACK;
+use ggez::graphics::{Color, BLACK};
 use ggez::timer::check_update_time;
 use ggez::{Context, GameResult};
 use physics_system::player_physics_system::PlayerPhysicsSystem;
@@ -40,6 +41,15 @@ impl GameState {
             .set_physics_system(Box::new(PlayerPhysicsSystem::default()));
         // add player to world
         world.add_entity(player);
+
+        // create a platform
+        let platform = Entity::default()
+            .set_location(50.0, 650.0)
+            .set_draw_system(Box::new(PlatformDrawSystem::new(Color::new(
+                1.0, 0.1, 0.1, 1.0,
+            ))))
+            .set_collidable(true);
+        world.add_entity(platform);
 
         Ok(Self {
             world,

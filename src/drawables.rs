@@ -1,4 +1,4 @@
-use ggez::graphics::{Color, DrawMode, Mesh, MeshBuilder};
+use ggez::graphics::{Color, DrawMode, Mesh, MeshBuilder, Rect, WHITE};
 use ggez::mint::Point2;
 use ggez::{Context, GameResult};
 
@@ -6,7 +6,8 @@ use crate::world::World;
 
 pub struct Drawables {
     pub player: Mesh,
-    pub grid: Mesh,
+    // pub grid: Mesh,
+    pub platform: Mesh,
 }
 
 impl Drawables {
@@ -21,9 +22,14 @@ impl Drawables {
             )
             .build(context)?;
 
-        let grid = Self::create_grid(world, context)?;
+        // let grid = Self::create_grid(world, context)?;
+        let platform = Self::create_platform(world, context)?;
 
-        Ok(Self { player, grid })
+        Ok(Self {
+            player,
+            // grid,
+            platform,
+        })
     }
 
     fn create_grid(world: &World, context: &mut Context) -> GameResult<Mesh> {
@@ -49,5 +55,18 @@ impl Drawables {
         }
 
         grid.build(context)
+    }
+
+    fn create_platform(world: &World, context: &mut Context) -> GameResult<Mesh> {
+        let width = world.unit_width;
+        let height = world.unit_height;
+
+        MeshBuilder::new()
+            .rectangle(
+                DrawMode::fill(),
+                Rect::new(-width / 2.0, -height / 2.0, width, height),
+                WHITE,
+            )
+            .build(context)
     }
 }

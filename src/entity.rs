@@ -11,7 +11,8 @@ pub struct Entity {
     pub location: Rect,
     draw_system: Option<Box<dyn DrawSystem>>,
     affected_by_gravity: bool,
-    physics_system: Option<Box<dyn PhysicsSystem>>,
+    pub physics_system: Option<Box<dyn PhysicsSystem>>,
+    pub collidable: bool,
 }
 
 impl Entity {
@@ -38,6 +39,11 @@ impl Entity {
         self
     }
 
+    pub fn set_collidable(mut self, collidable: bool) -> Self {
+        self.collidable = collidable;
+        self
+    }
+
     pub fn draw(&self, context: &mut Context, drawables: &Drawables, lag: f32) -> GameResult {
         if let Some(draw_system) = &self.draw_system {
             draw_system.draw(
@@ -52,29 +58,43 @@ impl Entity {
         Ok(())
     }
 
-    pub fn update(&mut self, gravity: &Vector2<f32>) {
+    pub fn update(&mut self, gravity: &Vector2<f32>, collidable_others: Vec<Entity>) {
         if let Some(physics_system) = &mut self.physics_system {
             if self.affected_by_gravity {
                 physics_system.apply_force(gravity);
             }
 
-            physics_system.update(&mut self.location);
+            physics_system.update(&mut self.location, collidable_others);
         }
     }
 }
 
 impl Default for Entity {
     fn default() -> Self {
-        let location = Rect::new(0.0, 0.0, 0.0, 0.0);
+        let location = Rect::new(0.0, 0.0, 5.0, 5.0);
         let draw_system = None;
         let affected_by_gravity = false;
         let physics_system = None;
+        let collidable = false;
 
         Self {
             location,
             draw_system,
             affected_by_gravity,
             physics_system,
+            collidable,
+        }
+    }
+}
+
+impl Clone for Entity {
+    fn clone(&self) -> Self {
+        Self {
+            location: self.location,
+            draw_system: None,
+            affected_by_gravity: self.affected_by_gravity,
+            physics_system: None,
+            collidable: self.collidable,
         }
     }
 }
@@ -121,5 +141,13 @@ mod test {
         assert!(matches!(entity.physics_system, None));
         entity = entity.set_physics_system(Box::new(PlayerPhysicsSystem::default()));
         assert!(!matches!(entity.physics_system, None));
+    }
+
+    #[test]
+    fn ci_test_set_entity_as_collidable() {
+        let mut entity = Entity::default();
+        assert_eq!(entity.collidable, false);
+        entity = entity.set_collidable(true);
+        assert_eq!(entity.collidable, true);
     }
 }

@@ -46,7 +46,7 @@ impl World {
     pub fn draw(&self, context: &mut Context, drawables: &Drawables, lag: f32) -> GameResult {
         // push_transform(context, Some(DrawParam::new().dest(self.dest).to_matrix()));
         // apply_transformations(context)?;
-        draw(context, &drawables.grid, DrawParam::new())?;
+        // draw(context, &drawables.grid, DrawParam::new())?;
         let entities = self.grid.query(Rect::new(0.0, 0.0, 1280.0, 720.0));
         entities
             .iter()
@@ -57,10 +57,11 @@ impl World {
 
     pub fn update(&mut self) {
         let gravity = &self.gravity;
+        let collidable_entities = self.grid.get_all_cloned();
         let mut entities = self.grid.get_all_entities_mut();
         entities
             .iter_mut()
-            .for_each(|entity| entity.update(gravity));
+            .for_each(|entity| entity.update(gravity, collidable_entities.clone()));
     }
 
     fn reset_grid(&mut self) {
@@ -72,10 +73,10 @@ impl World {
 impl Default for World {
     fn default() -> Self {
         let gravity = Vector2::new(0.0, 0.0);
-        let width = 5000.0;
-        let height = 5000.0;
-        let unit_width = 1.0;
-        let unit_height = 1.0;
+        let width = 10.0;
+        let height = 10.0;
+        let unit_width = 10.0;
+        let unit_height = 10.0;
         let grid = Grid::new(width, height, unit_width, unit_height);
 
         Self {

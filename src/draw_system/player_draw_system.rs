@@ -1,4 +1,4 @@
-use ggez::graphics::{draw, DrawParam, Rect};
+use ggez::graphics::{draw, DrawMode, DrawParam, MeshBuilder, Rect, WHITE};
 use ggez::{Context, GameResult};
 
 use crate::drawables::Drawables;
@@ -29,6 +29,14 @@ impl DrawSystem for PlayerDrawSystem {
             context,
             &drawables.player,
             DrawParam::default().dest([x, y]),
-        )
+        )?;
+
+        let circle = MeshBuilder::new()
+            .circle(DrawMode::fill(), [location.x, location.y], 3.0, 0.1, WHITE)
+            .build(context)?;
+
+        draw(context, &circle, DrawParam::new())?;
+
+        Ok(())
     }
 }

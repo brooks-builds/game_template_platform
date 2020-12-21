@@ -1,5 +1,7 @@
 use ggez::nalgebra::Vector2;
 
+use crate::entity::Entity;
+
 use super::PhysicsSystem;
 
 #[derive(Debug)]
@@ -25,7 +27,7 @@ impl PhysicsSystem for PlayerPhysicsSystem {
         self.acceleration += force;
     }
 
-    fn update(&mut self, location: &mut ggez::graphics::Rect) {
+    fn update(&mut self, location: &mut ggez::graphics::Rect, others: Vec<Entity>) {
         self.velocity += self.acceleration;
         if self.velocity.y > 10.0 {
             self.velocity.y = 10.0;
@@ -35,6 +37,17 @@ impl PhysicsSystem for PlayerPhysicsSystem {
         location.x += self.velocity.x;
         location.y += self.velocity.y;
         self.acceleration *= 0.0;
+
+        others.iter().for_each(|other| {
+            if !other.collidable {
+                return;
+            }
+
+            if location.overlaps(&other.location) {
+                self.velocity *= 0.0;
+                location.y = other.location.y - other.location.h / 2.0 - location.h / 2.0;
+            }
+        })
     }
 
     fn get_velocity(&self) -> &Vector2<f32> {

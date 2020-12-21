@@ -6,6 +6,7 @@ use ggez::{Context, GameResult};
 use crate::drawables::Drawables;
 use crate::physics_system::PhysicsSystem;
 
+pub mod platform_draw_system;
 pub mod player_draw_system;
 
 pub trait DrawSystem

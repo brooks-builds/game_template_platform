@@ -66,6 +66,18 @@ impl Grid {
 
         entities.into_iter().flatten().collect()
     }
+
+    pub fn get_all_cloned(&self) -> Vec<Entity> {
+        let mut entities = vec![];
+
+        self.cells.iter().for_each(|row| {
+            row.iter().for_each(|cell| {
+                entities.push(cell.get_all_cloned());
+            });
+        });
+
+        entities.into_iter().flatten().collect()
+    }
 }
 
 #[cfg(test)]
@@ -73,6 +85,7 @@ mod test {
     use ggez::graphics::Rect;
 
     use crate::entity::Entity;
+    use crate::physics_system::player_physics_system::PlayerPhysicsSystem;
 
     use super::*;
 
@@ -118,5 +131,18 @@ mod test {
         let query = Rect::new(0.0, 0.0, 50.0, 50.0);
         let entities: Vec<&Entity> = grid.query(query);
         assert_eq!(entities.len(), 2);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn ci_test_get_all_cloned() {
+        let mut grid = Grid::new(100.0, 100.0, 10.0, 10.0);
+        let entity_1 =
+            Entity::default().set_physics_system(Box::new(PlayerPhysicsSystem::default()));
+        grid.insert(entity_1);
+        let other_entities = grid.get_all_cloned();
+        assert_eq!(other_entities[0].collidable, false);
+        assert_eq!(other_entities[0].location.x, 0.0);
+        assert!(matches!(other_entities[0].physics_system, None));
     }
 }
