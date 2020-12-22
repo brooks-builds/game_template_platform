@@ -5,9 +5,16 @@ use crate::entity::Entity;
 use super::PhysicsSystem;
 
 #[derive(Debug)]
+pub enum PlayerState {
+    Falling,
+    Standing,
+}
+
+#[derive(Debug)]
 pub struct PlayerPhysicsSystem {
     acceleration: Vector2<f32>,
     velocity: Vector2<f32>,
+    pub state: PlayerState,
 }
 
 impl Default for PlayerPhysicsSystem {
@@ -18,6 +25,7 @@ impl Default for PlayerPhysicsSystem {
         Self {
             acceleration,
             velocity,
+            state: PlayerState::Falling,
         }
     }
 }
@@ -46,6 +54,7 @@ impl PhysicsSystem for PlayerPhysicsSystem {
             if location.overlaps(&other.location) {
                 self.velocity *= 0.0;
                 location.y = other.location.y - other.location.h / 2.0 - location.h / 2.0;
+                self.state = PlayerState::Standing;
             }
         })
     }

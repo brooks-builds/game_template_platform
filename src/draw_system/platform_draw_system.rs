@@ -1,4 +1,4 @@
-use ggez::graphics::{draw, Color, DrawMode, DrawParam, MeshBuilder, WHITE};
+use ggez::graphics::{draw, Color, DrawParam};
 
 use super::DrawSystem;
 

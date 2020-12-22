@@ -1,7 +1,7 @@
 pub mod cell;
 pub mod grid;
 
-use ggez::graphics::{draw, DrawParam, Rect};
+use ggez::graphics::Rect;
 use ggez::nalgebra::Vector2;
 use ggez::{Context, GameResult};
 use grid::Grid;
@@ -10,7 +10,7 @@ use crate::drawables::Drawables;
 use crate::entity::Entity;
 
 pub struct World {
-    grid: Grid,
+    grid: Option<Grid>,
     gravity: Vector2<f32>,
     pub width: f32,
     pub height: f32,
@@ -19,68 +19,80 @@ pub struct World {
 }
 
 impl World {
-    pub fn set_gravity(mut self, gravity: f32) -> Self {
+    /// Create a new world with the default settings
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn set_gravity(&mut self, gravity: f32) -> &mut Self {
         self.gravity.y = gravity;
 
         self
     }
 
-    pub fn set_size(mut self, width: f32, height: f32) -> Self {
+    pub fn set_size(&mut self, width: f32, height: f32) -> &mut Self {
         self.width = width;
         self.height = height;
-        self.reset_grid();
         self
     }
 
-    pub fn set_unit_size(mut self, width: f32, height: f32) -> Self {
+    pub fn set_unit_size(&mut self, width: f32, height: f32) -> &mut Self {
         self.unit_width = width;
         self.unit_height = height;
-        self.reset_grid();
         self
+    }
+
+    pub fn build(&mut self) {
+        self.reset_grid();
     }
 
     pub fn add_entity(&mut self, entity: Entity) {
-        self.grid.insert(entity);
+        if let Some(grid) = &mut self.grid {
+            grid.insert(entity);
+        }
     }
 
     pub fn draw(&self, context: &mut Context, drawables: &Drawables, lag: f32) -> GameResult {
         // push_transform(context, Some(DrawParam::new().dest(self.dest).to_matrix()));
         // apply_transformations(context)?;
         // draw(context, &drawables.grid, DrawParam::new())?;
-        let entities = self.grid.query(Rect::new(0.0, 0.0, 1280.0, 720.0));
-        entities
-            .iter()
-            .try_for_each(|entity| entity.draw(context, drawables, lag))?;
+        if let Some(grid) = &self.grid {
+            let entities = grid.query(Rect::new(0.0, 0.0, 1280.0, 720.0));
+            entities
+                .iter()
+                .try_for_each(|entity| entity.draw(context, drawables, lag))?;
+        }
         // pop_transform(context);
         Ok(())
     }
 
     pub fn update(&mut self) {
         let gravity = &self.gravity;
-        let collidable_entities = self.grid.get_all_cloned();
-        let mut entities = self.grid.get_all_entities_mut();
-        entities
-            .iter_mut()
-            .for_each(|entity| entity.update(gravity, collidable_entities.clone()));
+        if let Some(grid) = &mut self.grid {
+            let collidable_entities = grid.get_all_cloned();
+            let mut entities = grid.get_all_entities_mut();
+            entities
+                .iter_mut()
+                .for_each(|entity| entity.update(gravity, collidable_entities.clone()));
+        }
     }
 
-    fn reset_grid(&mut self) {
+    pub fn reset_grid(&mut self) {
         let grid = Grid::new(self.width, self.height, self.unit_width, self.unit_height);
-        self.grid = grid;
+        self.grid = Some(grid);
     }
 }
 
 impl Default for World {
     fn default() -> Self {
         let gravity = Vector2::new(0.0, 0.0);
-        let width = 10.0;
-        let height = 10.0;
-        let unit_width = 10.0;
-        let unit_height = 10.0;
-        let grid = Grid::new(width, height, unit_width, unit_height);
+        let width = 5000.0;
+        let height = 5000.0;
+        let unit_width = 1.0;
+        let unit_height = 1.0;
 
         Self {
-            grid,
+            grid: None,
             gravity,
             width,
             height,
@@ -101,7 +113,7 @@ mod test {
         let mut gravity = Vector2::new(0.0, 0.0);
         assert_eq!(world.gravity, gravity);
         gravity.y = 5.0;
-        world = world.set_gravity(5.0);
+        world.set_gravity(5.0);
         assert_eq!(world.gravity, gravity);
     }
 
@@ -111,7 +123,7 @@ mod test {
         let mut world: World = World::default();
         assert_eq!(world.width, 5000.0);
         assert_eq!(world.height, 5000.0);
-        world = world.set_size(10_000.0, 7_000.0);
+        world.set_size(10_000.0, 7_000.0);
         assert_eq!(world.width, 10_000.0);
         assert_eq!(world.height, 7_000.0);
     }
@@ -122,7 +134,7 @@ mod test {
         let mut world = World::default();
         assert_eq!(world.unit_width, 1.0);
         assert_eq!(world.unit_height, 1.0);
-        world = world.set_unit_size(50.0, 75.0);
+        world.set_unit_size(50.0, 75.0);
         assert_eq!(world.unit_width, 50.0);
         assert_eq!(world.unit_height, 75.0);
     }

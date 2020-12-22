@@ -7,7 +7,9 @@ use super::cell::Cell;
 pub struct Grid {
     width: usize,
     height: usize,
-    cells: Vec<Vec<Cell>>,
+    cells: Vec<Vec<Option<Cell>>>,
+    pub cell_width: f32,
+    pub cell_height: f32,
 }
 
 impl Grid {
@@ -20,7 +22,7 @@ impl Grid {
         for _index_y in 0..height {
             let mut row = vec![];
             for _index_x in 0..width {
-                row.push(Cell::new(cell_width, cell_height));
+                row.push(None);
             }
             cells.push(row);
         }
@@ -29,6 +31,8 @@ impl Grid {
             width,
             height,
             cells,
+            cell_width,
+            cell_height,
         }
     }
 
@@ -37,7 +41,13 @@ impl Grid {
     pub fn insert(&mut self, entity: Entity) {
         let index_y = entity.location.y as usize / self.height;
         let index_x = entity.location.x as usize / self.width;
-        self.cells[index_y][index_x].insert(entity);
+        if let Some(cell) = &mut self.cells[index_y][index_x] {
+            cell.insert(entity);
+        } else {
+            let mut cell = Cell::new();
+            cell.insert(entity);
+            self.cells[index_y][index_x] = Some(cell);
+        }
     }
 
     pub fn query(&self, query: Rect) -> Vec<&Entity> {
@@ -49,7 +59,9 @@ impl Grid {
 
         for index_y in start_index_y..=end_index_y {
             for index_x in start_index_x..=end_index_x {
-                entities.push(self.cells[index_y][index_x].get_all());
+                if let Some(cell) = &self.cells[index_y][index_x] {
+                    entities.push(cell.get_all());
+                }
             }
         }
 
@@ -60,8 +72,11 @@ impl Grid {
         let mut entities = vec![];
 
         self.cells.iter_mut().for_each(|row| {
-            row.iter_mut()
-                .for_each(|cell| entities.push(cell.get_all_mut()));
+            row.iter_mut().for_each(|maybe_cell| {
+                if let Some(cell) = maybe_cell {
+                    entities.push(cell.get_all_mut())
+                };
+            })
         });
 
         entities.into_iter().flatten().collect()
@@ -71,8 +86,10 @@ impl Grid {
         let mut entities = vec![];
 
         self.cells.iter().for_each(|row| {
-            row.iter().for_each(|cell| {
-                entities.push(cell.get_all_cloned());
+            row.iter().for_each(|maybe_cell| {
+                if let Some(cell) = maybe_cell {
+                    entities.push(cell.get_all_cloned());
+                }
             });
         });
 
@@ -104,7 +121,6 @@ mod test {
         assert_eq!(grid.height, expected_height);
         assert_eq!(grid.cells.len(), 10);
         assert_eq!(grid.cells[0].len(), 10);
-        assert_eq!(grid.cells[0][0].width, cell_width);
     }
 
     #[test]
@@ -113,18 +129,27 @@ mod test {
         let mut grid = Grid::new(100.0, 100.0, 10.0, 10.0);
         let entity = Entity::default();
         grid.insert(entity);
-        assert_eq!(grid.cells[0][0].get_all()[0].location.x, 0.0);
-        let entity = Entity::default().set_location(15.0, 15.0);
+        assert!(!matches!(grid.cells[0][0], None));
+        if let Some(cell) = &grid.cells[0][0] {
+            assert_eq!(cell.get_all()[0].location.x, 0.0);
+        }
+        let mut entity = Entity::new();
+        entity.set_location(15.0, 15.0);
         grid.insert(entity);
-        assert_eq!(grid.cells[1][1].get_all()[0].location.x, 15.0);
+        assert!(!matches!(grid.cells[1][1], None));
+        if let Some(cell) = &grid.cells[1][1] {
+            assert_eq!(cell.get_all()[0].location.x, 15.0);
+        }
     }
 
     #[test]
     fn ci_test_query_for_entities() {
         let mut grid = Grid::new(100.0, 100.0, 10.0, 10.0);
-        let entity_1 = Entity::default();
-        let entity_2 = Entity::default().set_location(15.0, 15.0);
-        let entity_3 = Entity::default().set_location(95.0, 90.0);
+        let entity_1 = Entity::new();
+        let mut entity_2 = Entity::new();
+        entity_2.set_location(15.0, 15.0);
+        let mut entity_3 = Entity::new();
+        entity_3.set_location(95.0, 90.0);
         grid.insert(entity_1);
         grid.insert(entity_2);
         grid.insert(entity_3);
@@ -137,8 +162,8 @@ mod test {
     #[allow(clippy::float_cmp)]
     fn ci_test_get_all_cloned() {
         let mut grid = Grid::new(100.0, 100.0, 10.0, 10.0);
-        let entity_1 =
-            Entity::default().set_physics_system(Box::new(PlayerPhysicsSystem::default()));
+        let mut entity_1 = Entity::new();
+        entity_1.set_physics_system(Box::new(PlayerPhysicsSystem::default()));
         grid.insert(entity_1);
         let other_entities = grid.get_all_cloned();
         assert_eq!(other_entities[0].collidable, false);

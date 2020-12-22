@@ -16,31 +16,62 @@ pub struct Entity {
 }
 
 impl Entity {
-    pub fn set_location(mut self, x: f32, y: f32) -> Self {
+    /// Create a new entity with the default values
+    /// ```
+    /// use game_template_platform::entity::Entity;
+    /// let mut entity = Entity::new();
+    /// ```
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set the location of the entity. We are using a GGEZ Rect to store the location and size data together
+    /// ```
+    /// use game_template_platform::entity::Entity;
+    /// let mut player = Entity::new();
+    /// player.set_location(50.0, 65.0);
+    /// assert_eq!(player.location.x, 50.0);
+    /// assert_eq!(player.location.y, 65.0);
+    /// ```
+    pub fn set_location(&mut self, x: f32, y: f32) -> &mut Self {
         self.location.x = x;
         self.location.y = y;
 
         self
     }
 
-    pub fn set_draw_system(mut self, draw_system: Box<dyn DrawSystem>) -> Self {
+    pub fn set_draw_system(&mut self, draw_system: Box<dyn DrawSystem>) -> &mut Self {
         self.draw_system = Some(draw_system);
 
         self
     }
 
-    pub fn set_affected_by_gravity(mut self) -> Self {
+    pub fn set_affected_by_gravity(&mut self) -> &mut Self {
         self.affected_by_gravity = true;
         self
     }
 
-    pub fn set_physics_system(mut self, physics_system: Box<dyn PhysicsSystem>) -> Self {
+    pub fn set_physics_system(&mut self, physics_system: Box<dyn PhysicsSystem>) -> &mut Self {
         self.physics_system = Some(physics_system);
         self
     }
 
-    pub fn set_collidable(mut self, collidable: bool) -> Self {
+    pub fn set_collidable(&mut self, collidable: bool) -> &mut Self {
         self.collidable = collidable;
+        self
+    }
+
+    /// set the width and height of the entity
+    /// ```
+    /// use game_template_platform::entity::Entity;
+    /// let mut player = Entity::new();
+    /// player.set_size(50.0, 150.0);
+    /// assert_eq!(player.location.w, 50.0);
+    /// assert_eq!(player.location.h, 150.0);
+    /// ```
+    pub fn set_size(&mut self, width: f32, height: f32) -> &mut Self {
+        self.location.w = width;
+        self.location.h = height;
         self
     }
 
@@ -60,10 +91,13 @@ impl Entity {
 
     pub fn update(&mut self, gravity: &Vector2<f32>, collidable_others: Vec<Entity>) {
         if let Some(physics_system) = &mut self.physics_system {
+            // and we are not standing
             if self.affected_by_gravity {
                 physics_system.apply_force(gravity);
             }
 
+            // we might also want to pass in the gravity force, and then the update function will determine if the gravity force should be applied
+            // We will also want to create and pass in an entity state here for updating.
             physics_system.update(&mut self.location, collidable_others);
         }
     }
@@ -71,7 +105,7 @@ impl Entity {
 
 impl Default for Entity {
     fn default() -> Self {
-        let location = Rect::new(0.0, 0.0, 5.0, 5.0);
+        let location = Rect::new(0.0, 0.0, 0.0, 0.0);
         let draw_system = None;
         let affected_by_gravity = false;
         let physics_system = None;
@@ -96,58 +130,5 @@ impl Clone for Entity {
             physics_system: None,
             collidable: self.collidable,
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::draw_system::player_draw_system::PlayerDrawSystem;
-    use crate::physics_system::player_physics_system::PlayerPhysicsSystem;
-
-    use super::*;
-
-    #[test]
-    fn ci_test_set_location() {
-        let mut entity = Entity::default();
-        let mut location = Rect::new(0.0, 0.0, 0.0, 0.0);
-
-        assert_eq!(entity.location, location);
-        entity = entity.set_location(1.0, 2.0);
-        location.x = 1.0;
-        location.y = 2.0;
-        assert_eq!(entity.location, location);
-    }
-
-    #[test]
-    fn test_add_player_draw_system() {
-        let mut entity = Entity::default();
-        assert!(matches!(entity.draw_system, None));
-        let player_draw_system = Box::new(PlayerDrawSystem);
-        entity = entity.set_draw_system(player_draw_system);
-        assert!(!matches!(entity.draw_system, None));
-    }
-
-    #[test]
-    fn ci_test_making_entity_affected_by_gravity() {
-        let mut entity = Entity::default();
-        assert_eq!(entity.affected_by_gravity, false);
-        entity = entity.set_affected_by_gravity();
-        assert_eq!(entity.affected_by_gravity, true);
-    }
-
-    #[test]
-    fn ci_test_add_player_physics_system() {
-        let mut entity = Entity::default();
-        assert!(matches!(entity.physics_system, None));
-        entity = entity.set_physics_system(Box::new(PlayerPhysicsSystem::default()));
-        assert!(!matches!(entity.physics_system, None));
-    }
-
-    #[test]
-    fn ci_test_set_entity_as_collidable() {
-        let mut entity = Entity::default();
-        assert_eq!(entity.collidable, false);
-        entity = entity.set_collidable(true);
-        assert_eq!(entity.collidable, true);
     }
 }

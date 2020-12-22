@@ -1,7 +1,7 @@
 mod config;
 mod draw_system;
 mod drawables;
-mod entity;
+pub mod entity;
 mod physics_system;
 mod world;
 
@@ -9,7 +9,7 @@ use config::Config;
 use draw_system::platform_draw_system::PlatformDrawSystem;
 use draw_system::player_draw_system::PlayerDrawSystem;
 use drawables::Drawables;
-use entity::Entity;
+pub use entity::Entity;
 use ggez::event::EventHandler;
 use ggez::graphics::{Color, BLACK};
 use ggez::timer::check_update_time;
@@ -26,29 +26,35 @@ pub struct GameState {
 impl GameState {
     pub fn new(context: &mut Context) -> GameResult<Self> {
         let config = Config::default();
-        let mut world = World::default()
+        let mut world = World::new();
+        world
             .set_gravity(config.gravity_force)
             .set_size(config.world_width, config.world_height)
-            .set_unit_size(config.world_unit_width, config.world_unit_height);
+            .set_unit_size(config.world_unit_width, config.world_unit_height)
+            .build();
         let drawables = Drawables::new(context, &world)?;
         let target_update_fps = config.target_update_fps;
 
         // create player
-        let player = Entity::default()
+        let mut player = Entity::new();
+        player
             .set_location(50.0, 50.0)
             .set_draw_system(Box::new(PlayerDrawSystem))
             .set_affected_by_gravity()
-            .set_physics_system(Box::new(PlayerPhysicsSystem::default()));
+            .set_physics_system(Box::new(PlayerPhysicsSystem::default()))
+            .set_size(10.0, 10.0);
         // add player to world
         world.add_entity(player);
 
         // create a platform
-        let platform = Entity::default()
+        let mut platform = Entity::new();
+        platform
             .set_location(50.0, 650.0)
             .set_draw_system(Box::new(PlatformDrawSystem::new(Color::new(
                 1.0, 0.1, 0.1, 1.0,
             ))))
-            .set_collidable(true);
+            .set_collidable(true)
+            .set_size(world.unit_width, world.unit_height);
         world.add_entity(platform);
 
         Ok(Self {
