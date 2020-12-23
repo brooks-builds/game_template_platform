@@ -14,7 +14,8 @@ impl DrawSystem for PlayerDrawSystem {
         &self,
         drawables: &Drawables,
         context: &mut Context,
-        location: &Rect,
+        location: &ggez::nalgebra::Vector2<f32>,
+        (width, height): (f32, f32),
         lag: f32,
         physics_system: &Option<Box<dyn PhysicsSystem>>,
     ) -> GameResult {
@@ -31,11 +32,20 @@ impl DrawSystem for PlayerDrawSystem {
             DrawParam::default().dest([x, y]),
         )?;
 
-        let circle = MeshBuilder::new()
-            .circle(DrawMode::fill(), [location.x, location.y], 3.0, 0.1, WHITE)
+        let border = MeshBuilder::new()
+            .rectangle(
+                DrawMode::stroke(2.0),
+                Rect::new(
+                    location.x - width / 2.0,
+                    location.y - height / 2.0,
+                    width,
+                    height,
+                ),
+                WHITE,
+            )
             .build(context)?;
 
-        draw(context, &circle, DrawParam::new())?;
+        draw(context, &border, DrawParam::new())?;
 
         Ok(())
     }

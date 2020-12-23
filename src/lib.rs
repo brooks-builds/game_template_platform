@@ -32,17 +32,17 @@ impl GameState {
             .set_size(config.world_width, config.world_height)
             .set_unit_size(config.world_unit_width, config.world_unit_height)
             .build();
-        let drawables = Drawables::new(context, &world)?;
+        let drawables = Drawables::new(context, &world, &config)?;
         let target_update_fps = config.target_update_fps;
 
         // create player
         let mut player = Entity::new();
         player
-            .set_location(50.0, 50.0)
+            .set_location(config.player_start_x, config.player_start_y)
             .set_draw_system(Box::new(PlayerDrawSystem))
             .set_affected_by_gravity()
             .set_physics_system(Box::new(PlayerPhysicsSystem::default()))
-            .set_size(10.0, 10.0);
+            .set_size(config.player_width, config.player_height);
         // add player to world
         world.add_entity(player);
 

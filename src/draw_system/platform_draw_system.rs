@@ -1,4 +1,8 @@
-use ggez::graphics::{draw, Color, DrawParam};
+use ggez::graphics::{draw, Color, DrawMode, DrawParam, MeshBuilder, Rect, WHITE};
+use ggez::Context;
+
+use crate::drawables::Drawables;
+use crate::physics_system::PhysicsSystem;
 
 use super::DrawSystem;
 
@@ -16,11 +20,12 @@ impl PlatformDrawSystem {
 impl DrawSystem for PlatformDrawSystem {
     fn draw(
         &self,
-        drawables: &crate::drawables::Drawables,
-        context: &mut ggez::Context,
-        location: &ggez::graphics::Rect,
+        drawables: &Drawables,
+        context: &mut Context,
+        location: &ggez::nalgebra::Vector2<f32>,
+        (width, height): (f32, f32),
         _lag: f32,
-        _physics_system: &Option<Box<dyn crate::physics_system::PhysicsSystem>>,
+        _physics_system: &Option<Box<dyn PhysicsSystem>>,
     ) -> ggez::GameResult {
         draw(
             context,
@@ -29,6 +34,21 @@ impl DrawSystem for PlatformDrawSystem {
                 .dest([location.x, location.y])
                 .color(self.color),
         )?;
+
+        let border = MeshBuilder::new()
+            .rectangle(
+                DrawMode::stroke(2.0),
+                Rect::new(
+                    location.x - width / 2.0,
+                    location.y - height / 2.0,
+                    width,
+                    height,
+                ),
+                WHITE,
+            )
+            .build(context)?;
+
+        draw(context, &border, DrawParam::new())?;
 
         Ok(())
     }

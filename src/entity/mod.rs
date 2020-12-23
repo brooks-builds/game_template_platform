@@ -1,4 +1,3 @@
-use ggez::graphics::Rect;
 use ggez::nalgebra::Vector2;
 use ggez::{Context, GameResult};
 
@@ -6,13 +5,20 @@ use crate::draw_system::DrawSystem;
 use crate::drawables::Drawables;
 use crate::physics_system::PhysicsSystem;
 
+use self::entity_state::EntityState;
+
+pub mod entity_state;
+
 #[derive(Debug)]
 pub struct Entity {
-    pub location: Rect,
+    pub location: Vector2<f32>,
+    pub width: f32,
+    pub height: f32,
     draw_system: Option<Box<dyn DrawSystem>>,
     affected_by_gravity: bool,
     pub physics_system: Option<Box<dyn PhysicsSystem>>,
     pub collidable: bool,
+    state: EntityState,
 }
 
 impl Entity {
@@ -66,12 +72,12 @@ impl Entity {
     /// use game_template_platform::entity::Entity;
     /// let mut player = Entity::new();
     /// player.set_size(50.0, 150.0);
-    /// assert_eq!(player.location.w, 50.0);
-    /// assert_eq!(player.location.h, 150.0);
+    /// assert_eq!(player.width, 50.0);
+    /// assert_eq!(player.height, 150.0);
     /// ```
     pub fn set_size(&mut self, width: f32, height: f32) -> &mut Self {
-        self.location.w = width;
-        self.location.h = height;
+        self.width = width;
+        self.height = height;
         self
     }
 
@@ -81,6 +87,7 @@ impl Entity {
                 drawables,
                 context,
                 &self.location,
+                (self.width, self.height),
                 lag,
                 &self.physics_system,
             )?;
@@ -93,19 +100,31 @@ impl Entity {
         if let Some(physics_system) = &mut self.physics_system {
             // and we are not standing
             if self.affected_by_gravity {
-                physics_system.apply_force(gravity);
+                match self.state {
+                    EntityState::None => physics_system.apply_force(gravity),
+                    EntityState::Falling => physics_system.apply_force(gravity),
+                    EntityState::Standing => {}
+                }
             }
 
             // we might also want to pass in the gravity force, and then the update function will determine if the gravity force should be applied
             // We will also want to create and pass in an entity state here for updating.
-            physics_system.update(&mut self.location, collidable_others);
+            physics_system.update(
+                &mut self.location,
+                self.width,
+                self.height,
+                collidable_others,
+                &mut self.state,
+            );
         }
     }
 }
 
 impl Default for Entity {
     fn default() -> Self {
-        let location = Rect::new(0.0, 0.0, 0.0, 0.0);
+        let location = Vector2::new(0.0, 0.0);
+        let width = 0.0;
+        let height = 0.0;
         let draw_system = None;
         let affected_by_gravity = false;
         let physics_system = None;
@@ -113,10 +132,13 @@ impl Default for Entity {
 
         Self {
             location,
+            width,
+            height,
             draw_system,
             affected_by_gravity,
             physics_system,
             collidable,
+            state: EntityState::None,
         }
     }
 }
@@ -125,10 +147,13 @@ impl Clone for Entity {
     fn clone(&self) -> Self {
         Self {
             location: self.location,
+            width: self.width,
+            height: self.height,
             draw_system: None,
             affected_by_gravity: self.affected_by_gravity,
             physics_system: None,
             collidable: self.collidable,
+            state: self.state,
         }
     }
 }

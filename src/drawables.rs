@@ -1,7 +1,7 @@
 use ggez::graphics::{Color, DrawMode, Mesh, MeshBuilder, Rect, WHITE};
-use ggez::mint::Point2;
 use ggez::{Context, GameResult};
 
+use crate::config::Config;
 use crate::world::World;
 
 pub struct Drawables {
@@ -10,14 +10,17 @@ pub struct Drawables {
 }
 
 impl Drawables {
-    pub fn new(context: &mut Context, world: &World) -> GameResult<Self> {
+    pub fn new(context: &mut Context, world: &World, config: &Config) -> GameResult<Self> {
         let player = MeshBuilder::new()
-            .circle(
+            .rectangle(
                 DrawMode::fill(),
-                Point2 { x: 0.0, y: 0.0 },
-                10.0,
-                0.1,
-                Color::new(0.4, 0.6, 0.9, 1.0),
+                Rect::new(
+                    -config.player_width / 2.0,
+                    -config.player_height / 2.0,
+                    config.player_width,
+                    config.player_height,
+                ),
+                Color::new(0.1, 0.1, 1.0, 1.0),
             )
             .build(context)?;
 

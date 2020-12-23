@@ -1,6 +1,5 @@
 use std::fmt::Debug;
 
-use ggez::graphics::Rect;
 use ggez::{Context, GameResult};
 
 use crate::drawables::Drawables;
@@ -17,7 +16,8 @@ where
         &self,
         drawables: &Drawables,
         context: &mut Context,
-        location: &Rect,
+        location: &ggez::nalgebra::Vector2<f32>,
+        size: (f32, f32),
         lag: f32,
         physics_system: &Option<Box<dyn PhysicsSystem>>,
     ) -> GameResult;
