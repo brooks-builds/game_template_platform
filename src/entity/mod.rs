@@ -7,7 +7,9 @@ use crate::physics_system::PhysicsSystem;
 
 use self::entity_state::EntityState;
 
+pub mod entity_data;
 pub mod entity_state;
+pub mod entity_type;
 
 #[derive(Debug)]
 pub struct Entity {

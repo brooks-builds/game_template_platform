@@ -2,18 +2,21 @@ mod config;
 mod draw_system;
 mod drawables;
 pub mod entity;
+mod level;
 mod physics_system;
 mod world;
 
 use config::Config;
-use draw_system::platform_draw_system::PlatformDrawSystem;
 use draw_system::player_draw_system::PlayerDrawSystem;
 use drawables::Drawables;
+use entity::entity_data::EntityData;
+use entity::entity_type::EntityType;
 pub use entity::Entity;
 use ggez::event::EventHandler;
 use ggez::graphics::{Color, BLACK};
 use ggez::timer::check_update_time;
 use ggez::{Context, GameResult};
+use level::Level;
 use physics_system::player_physics_system::PlayerPhysicsSystem;
 use world::World;
 
@@ -26,11 +29,24 @@ pub struct GameState {
 impl GameState {
     pub fn new(context: &mut Context) -> GameResult<Self> {
         let config = Config::default();
+        let level = Level::new(
+            5000.0,
+            5000.0,
+            vec![EntityData::new(
+                config.player_start_x,
+                500.0,
+                config.world_unit_width,
+                config.world_unit_height,
+                Color::new(0.0, 1.0, 0.0, 1.0),
+                EntityType::Platform,
+            )],
+        );
         let mut world = World::new();
         world
             .set_gravity(config.gravity_force)
             .set_size(config.world_width, config.world_height)
             .set_unit_size(config.world_unit_width, config.world_unit_height)
+            .add_level(level)
             .build();
         let drawables = Drawables::new(context, &world, &config)?;
         let target_update_fps = config.target_update_fps;
@@ -45,17 +61,6 @@ impl GameState {
             .set_size(config.player_width, config.player_height);
         // add player to world
         world.add_entity(player);
-
-        // create a platform
-        let mut platform = Entity::new();
-        platform
-            .set_location(50.0, 650.0)
-            .set_draw_system(Box::new(PlatformDrawSystem::new(Color::new(
-                1.0, 0.1, 0.1, 1.0,
-            ))))
-            .set_collidable(true)
-            .set_size(world.unit_width, world.unit_height);
-        world.add_entity(platform);
 
         Ok(Self {
             world,

@@ -1,13 +1,16 @@
 pub mod cell;
 pub mod grid;
 
+use entity::entity_type;
 use ggez::graphics::Rect;
 use ggez::nalgebra::Vector2;
 use ggez::{Context, GameResult};
 use grid::Grid;
 
+use crate::draw_system::platform_draw_system::PlatformDrawSystem;
 use crate::drawables::Drawables;
-use crate::entity::Entity;
+use crate::entity::{self, Entity};
+use crate::level::Level;
 
 pub struct World {
     grid: Option<Grid>,
@@ -16,6 +19,8 @@ pub struct World {
     pub height: f32,
     pub unit_width: f32,
     pub unit_height: f32,
+    levels: Vec<Level>,
+    current_level_index: usize,
 }
 
 impl World {
@@ -42,8 +47,9 @@ impl World {
         self
     }
 
+    /// Load the level which is the final step in creating the world. We are now ready to start the game.
     pub fn build(&mut self) {
-        self.reset_grid();
+        self.load_level();
     }
 
     pub fn add_entity(&mut self, entity: Entity) {
@@ -77,9 +83,41 @@ impl World {
         }
     }
 
-    pub fn reset_grid(&mut self) {
-        let grid = Grid::new(self.width, self.height, self.unit_width, self.unit_height);
+    pub fn reset_grid(&mut self, width: f32, height: f32) {
+        let grid = Grid::new(width, height, self.unit_width, self.unit_height);
         self.grid = Some(grid);
+    }
+
+    /// Load a new level into the world.
+    /// - reset the grid
+    /// - create platforms and put them into the grid
+    /// - load items and put into the grid
+    /// - load enemies and put into the grid
+    /// - load player and put into grid
+    pub fn load_level(&mut self) {
+        let level = self.levels[self.current_level_index].clone();
+        self.reset_grid(level.width, level.height);
+
+        level
+            .entity_datas
+            .iter()
+            .for_each(|entity_data| match entity_data.entity_type {
+                entity_type::EntityType::Player => {}
+                entity_type::EntityType::Platform => {
+                    let mut platform = Entity::new();
+                    platform
+                        .set_collidable(true)
+                        .set_draw_system(Box::new(PlatformDrawSystem::new(entity_data.color)))
+                        .set_location(entity_data.x, entity_data.y)
+                        .set_size(entity_data.width, entity_data.height);
+                    self.add_entity(platform);
+                }
+            });
+    }
+
+    pub fn add_level(&mut self, level: Level) -> &mut Self {
+        self.levels.push(level);
+        self
     }
 }
 
@@ -98,6 +136,8 @@ impl Default for World {
             height,
             unit_width,
             unit_height,
+            levels: vec![],
+            current_level_index: 0,
         }
     }
 }
@@ -137,5 +177,16 @@ mod test {
         world.set_unit_size(50.0, 75.0);
         assert_eq!(world.unit_width, 50.0);
         assert_eq!(world.unit_height, 75.0);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn ci_test_add_level() {
+        let mut world = World::default();
+        assert_eq!(world.levels.len(), 0);
+        let new_level = Level::new(100.0, 100.0, vec![]);
+        world.add_level(new_level);
+        assert_eq!(world.levels[0].width, 100.0);
+        assert_eq!(world.current_level_index, 0);
     }
 }
