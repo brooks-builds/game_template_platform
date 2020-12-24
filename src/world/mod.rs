@@ -2,12 +2,11 @@ pub mod cell;
 pub mod grid;
 
 use entity::entity_type;
-use ggez::graphics::Rect;
 use ggez::nalgebra::Vector2;
 use ggez::{Context, GameResult};
 use grid::Grid;
 
-use crate::draw_system::platform_draw_system::PlatformDrawSystem;
+use crate::camera::Camera;
 use crate::drawables::Drawables;
 use crate::entity::{self, Entity};
 use crate::level::Level;
@@ -21,6 +20,7 @@ pub struct World {
     pub unit_height: f32,
     levels: Vec<Level>,
     current_level_index: usize,
+    camera: Camera,
 }
 
 impl World {
@@ -63,7 +63,7 @@ impl World {
         // apply_transformations(context)?;
         // draw(context, &drawables.grid, DrawParam::new())?;
         if let Some(grid) = &self.grid {
-            let entities = grid.query(Rect::new(0.0, 0.0, 1280.0, 720.0));
+            let entities = grid.query(self.camera.as_rect());
             entities
                 .iter()
                 .try_for_each(|entity| entity.draw(context, drawables, lag))?;
@@ -107,7 +107,6 @@ impl World {
                     let mut platform = Entity::new();
                     platform
                         .set_collidable(true)
-                        .set_draw_system(Box::new(PlatformDrawSystem::new(entity_data.color)))
                         .set_location(entity_data.x, entity_data.y)
                         .set_size(entity_data.width, entity_data.height);
                     self.add_entity(platform);
@@ -117,6 +116,11 @@ impl World {
 
     pub fn add_level(&mut self, level: Level) -> &mut Self {
         self.levels.push(level);
+        self
+    }
+
+    pub fn set_camera(&mut self, camera: Camera) -> &mut Self {
+        self.camera = camera;
         self
     }
 }
@@ -138,6 +142,7 @@ impl Default for World {
             unit_height,
             levels: vec![],
             current_level_index: 0,
+            camera: Camera::default(),
         }
     }
 }
@@ -188,5 +193,15 @@ mod test {
         world.add_level(new_level);
         assert_eq!(world.levels[0].width, 100.0);
         assert_eq!(world.current_level_index, 0);
+    }
+
+    #[test]
+    fn ci_test_set_camera() {
+        let mut world = World::default();
+        let default_camera = Camera::default();
+        assert_eq!(world.camera, default_camera);
+        let camera = Camera::new(10.0, 15.0, 50.0, 50.0);
+        let _updated_world: &mut World = world.set_camera(camera);
+        assert_eq!(world.camera, camera);
     }
 }

@@ -1,3 +1,4 @@
+mod camera;
 mod config;
 mod draw_system;
 mod drawables;
@@ -6,6 +7,7 @@ mod level;
 mod physics_system;
 mod world;
 
+use camera::Camera;
 use config::Config;
 use draw_system::player_draw_system::PlayerDrawSystem;
 use drawables::Drawables;
@@ -32,21 +34,33 @@ impl GameState {
         let level = Level::new(
             5000.0,
             5000.0,
-            vec![EntityData::new(
-                config.player_start_x,
-                500.0,
-                config.world_unit_width,
-                config.world_unit_height,
-                Color::new(0.0, 1.0, 0.0, 1.0),
-                EntityType::Platform,
-            )],
+            vec![
+                EntityData::new(
+                    config.player_start_x,
+                    500.0,
+                    config.world_unit_width,
+                    config.world_unit_height,
+                    Color::new(0.0, 1.0, 0.0, 1.0),
+                    EntityType::Platform,
+                ),
+                EntityData::new(
+                    500.0,
+                    500.0,
+                    config.world_unit_width,
+                    config.world_unit_height,
+                    Color::new(1.0, 0.0, 0.0, 1.0),
+                    EntityType::Platform,
+                ),
+            ],
         );
+        let camera = Camera::new(-640.0, -360.0, 1280.0, 720.0);
         let mut world = World::new();
         world
             .set_gravity(config.gravity_force)
             .set_size(config.world_width, config.world_height)
             .set_unit_size(config.world_unit_width, config.world_unit_height)
             .add_level(level)
+            .set_camera(camera)
             .build();
         let drawables = Drawables::new(context, &world, &config)?;
         let target_update_fps = config.target_update_fps;
