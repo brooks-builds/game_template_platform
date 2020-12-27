@@ -1,7 +1,9 @@
 pub mod cell;
 pub mod grid;
 
+use entity::builder::EntityBuilder;
 use entity::entity_type;
+use ggez::graphics::Rect;
 use ggez::nalgebra::Vector2;
 use ggez::{Context, GameResult};
 use grid::Grid;
@@ -48,8 +50,8 @@ impl World {
     }
 
     /// Load the level which is the final step in creating the world. We are now ready to start the game.
-    pub fn build(&mut self) {
-        self.load_level();
+    pub fn build(&mut self, entity_builder: &mut EntityBuilder) {
+        self.load_level(entity_builder);
     }
 
     pub fn add_entity(&mut self, entity: Entity) {
@@ -64,6 +66,7 @@ impl World {
         // draw(context, &drawables.grid, DrawParam::new())?;
         if let Some(grid) = &self.grid {
             let entities = grid.query(self.camera.as_rect());
+
             entities
                 .iter()
                 .try_for_each(|entity| entity.draw(context, drawables, lag))?;
@@ -76,10 +79,24 @@ impl World {
         let gravity = &self.gravity;
         if let Some(grid) = &mut self.grid {
             let collidable_entities = grid.get_all_cloned();
-            let mut entities = grid.get_all_entities_mut();
-            entities
-                .iter_mut()
-                .for_each(|entity| entity.update(gravity, collidable_entities.clone()));
+            let entities = grid.get_all_entities_mut();
+            let mut moved_entities = vec![];
+            for entity in entities {
+                // get collidable entities near the entity
+                let old_location = entity.location;
+                entity.update(gravity, collidable_entities.clone());
+                let new_location = entity.location;
+                if old_location != new_location {
+                    // we need to tell the grid that an entity has been updated and might need to change cells
+                    moved_entities.push((entity.id, old_location, new_location));
+                }
+            }
+
+            moved_entities
+                .iter()
+                .for_each(|(id, old_location, new_location)| {
+                    grid.move_entity(*id, *old_location, *new_location);
+                })
         }
     }
 
@@ -94,7 +111,7 @@ impl World {
     /// - load items and put into the grid
     /// - load enemies and put into the grid
     /// - load player and put into grid
-    pub fn load_level(&mut self) {
+    pub fn load_level(&mut self, entity_builder: &mut EntityBuilder) {
         let level = self.levels[self.current_level_index].clone();
         self.reset_grid(level.width, level.height);
 
@@ -104,11 +121,12 @@ impl World {
             .for_each(|entity_data| match entity_data.entity_type {
                 entity_type::EntityType::Player => {}
                 entity_type::EntityType::Platform => {
-                    let mut platform = Entity::new();
-                    platform
-                        .set_collidable(true)
-                        .set_location(entity_data.x, entity_data.y)
-                        .set_size(entity_data.width, entity_data.height);
+                    let platform = entity_builder
+                        .create_entity()
+                        .collidable()
+                        .location(entity_data.x, entity_data.y)
+                        .size(entity_data.width, entity_data.height)
+                        .build();
                     self.add_entity(platform);
                 }
             });

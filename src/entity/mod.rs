@@ -7,6 +7,7 @@ use crate::physics_system::PhysicsSystem;
 
 use self::entity_state::EntityState;
 
+pub mod builder;
 pub mod entity_data;
 pub mod entity_state;
 pub mod entity_type;
@@ -21,10 +22,11 @@ pub struct Entity {
     pub physics_system: Option<Box<dyn PhysicsSystem>>,
     pub collidable: bool,
     state: EntityState,
+    pub id: u32,
 }
 
 impl Entity {
-    /// Create a new entity with the default values
+    /// Create a new entity with the default values and give it a specific ID
     /// ```
     /// use game_template_platform::entity::Entity;
     /// let mut entity = Entity::new();
@@ -98,7 +100,9 @@ impl Entity {
         Ok(())
     }
 
-    pub fn update(&mut self, gravity: &Vector2<f32>, collidable_others: Vec<Entity>) {
+    /// Update the entity and return true if the location of the entity changed
+    pub fn update(&mut self, gravity: &Vector2<f32>, collidable_others: Vec<Entity>) -> bool {
+        let original_location = self.location;
         if let Some(physics_system) = &mut self.physics_system {
             // and we are not standing
             if self.affected_by_gravity {
@@ -119,6 +123,7 @@ impl Entity {
                 &mut self.state,
             );
         }
+        original_location == self.location
     }
 }
 
@@ -141,6 +146,7 @@ impl Default for Entity {
             physics_system,
             collidable,
             state: EntityState::None,
+            id: 0,
         }
     }
 }
@@ -156,6 +162,7 @@ impl Clone for Entity {
             physics_system: None,
             collidable: self.collidable,
             state: self.state,
+            id: self.id,
         }
     }
 }

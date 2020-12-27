@@ -1,13 +1,15 @@
 use ggez::graphics::Rect;
+use ggez::nalgebra::Vector2;
 
-use crate::entity::Entity;
+use crate::entity::{self, Entity};
 
 use super::cell::Cell;
 
+#[derive(Debug)]
 pub struct Grid {
     width: usize,
     height: usize,
-    cells: Vec<Vec<Option<Cell>>>,
+    pub cells: Vec<Vec<Option<Cell>>>,
     pub cell_width: f32,
     pub cell_height: f32,
 }
@@ -39,8 +41,8 @@ impl Grid {
     /// Inserts an entity into the grid
     /// We are basing the position on the center of the entity
     pub fn insert(&mut self, entity: Entity) {
-        let index_y = entity.location.y as usize / self.height;
-        let index_x = entity.location.x as usize / self.width;
+        let index_y = (entity.location.y / self.cell_height) as usize;
+        let index_x = (entity.location.x / self.cell_width) as usize;
         if let Some(cell) = &mut self.cells[index_y][index_x] {
             cell.insert(entity);
         } else {
@@ -51,15 +53,14 @@ impl Grid {
     }
 
     pub fn query(&self, query: Rect) -> Vec<&Entity> {
-        let start_index_x = query.x as usize / self.width;
-        let start_index_y = query.y as usize / self.height;
-        let end_index_x = (query.x + query.w) as usize / self.width;
-        let end_index_y = (query.y + query.h) as usize / self.height;
+        let (start_x, start_y) = self.get_index_by_location(query.x, query.y);
+        let (end_x, end_y) = self.get_index_by_location(query.x + query.w, query.y + query.h);
         let mut entities = vec![];
 
-        for index_y in start_index_y..=end_index_y {
-            for index_x in start_index_x..=end_index_x {
+        for index_y in start_y..=end_y {
+            for index_x in start_x..=end_x {
                 if let Some(cell) = &self.cells[index_y][index_x] {
+                    dbg!("found");
                     entities.push(cell.get_all());
                 }
             }
@@ -95,12 +96,45 @@ impl Grid {
 
         entities.into_iter().flatten().collect()
     }
+
+    pub fn move_entity(
+        &mut self,
+        id: u32,
+        previous_location: Vector2<f32>,
+        new_location: Vector2<f32>,
+    ) {
+        let (old_x, old_y) = self.get_index_by_location(previous_location.x, previous_location.y);
+        let (new_x, new_y) = self.get_index_by_location(new_location.x, new_location.y);
+
+        if old_x != new_x || old_y != new_y {
+            if let Some(cell) = &mut self.cells[old_y][old_x] {
+                if let Some(entity) = cell.take_by_id(id) {
+                    self.insert(entity);
+                }
+            }
+        }
+
+        if let Some(cell) = &self.cells[old_y][old_x] {
+            if cell.is_empty() {
+                self.cells[old_y][old_x] = None;
+            }
+        }
+    }
+
+    fn get_index_by_location(&self, x: f32, y: f32) -> (usize, usize) {
+        (
+            (x / self.cell_width) as usize,
+            (y / self.cell_height) as usize,
+        )
+    }
 }
 
 #[cfg(test)]
 mod test {
     use ggez::graphics::Rect;
+    use ggez::nalgebra::Vector2;
 
+    use crate::entity::builder::EntityBuilder;
     use crate::entity::Entity;
     use crate::physics_system::player_physics_system::PlayerPhysicsSystem;
 
@@ -169,5 +203,25 @@ mod test {
         assert_eq!(other_entities[0].collidable, false);
         assert_eq!(other_entities[0].location.x, 0.0);
         assert!(matches!(other_entities[0].physics_system, None));
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn ci_test_grid_should_move_entity_from_one_cell_to_the_next() {
+        let mut grid = Grid::new(10.0, 10.0, 5.0, 5.0);
+        let mut entity_builder = EntityBuilder::new();
+        let player = entity_builder.create_entity().location(3.0, 4.0).build();
+        assert_eq!(player.id, 0);
+        grid.insert(player);
+        let mut entities = &mut grid.get_all_entities_mut();
+        let player = &mut entities[0];
+        let old_location = player.location;
+        player.location.y = 6.0;
+        let cloned_player = player.clone();
+        let new_location = player.location;
+        grid.move_entity(0, old_location, new_location);
+        assert!(grid.cells[0][0].is_none());
+        let entities = grid.cells[1][0].as_ref().unwrap().get_all();
+        assert_eq!(entities[0].location, Vector2::new(3.0, 6.0));
     }
 }

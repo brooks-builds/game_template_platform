@@ -11,6 +11,7 @@ use camera::Camera;
 use config::Config;
 use draw_system::player_draw_system::PlayerDrawSystem;
 use drawables::Drawables;
+use entity::builder::EntityBuilder;
 use entity::entity_data::EntityData;
 use entity::entity_type::EntityType;
 pub use entity::Entity;
@@ -26,6 +27,7 @@ pub struct GameState {
     world: World,
     drawables: Drawables,
     target_update_fps: u32,
+    entity_builder: EntityBuilder,
 }
 
 impl GameState {
@@ -53,33 +55,34 @@ impl GameState {
                 ),
             ],
         );
-        let camera = Camera::new(-640.0, -360.0, 1280.0, 720.0);
+        let camera = Camera::new(0.0, 0.0, 1280.0, 720.0);
         let mut world = World::new();
+        let mut entity_builder = EntityBuilder::new();
         world
             .set_gravity(config.gravity_force)
             .set_size(config.world_width, config.world_height)
             .set_unit_size(config.world_unit_width, config.world_unit_height)
             .add_level(level)
             .set_camera(camera)
-            .build();
+            .build(&mut entity_builder);
         let drawables = Drawables::new(context, &world, &config)?;
         let target_update_fps = config.target_update_fps;
 
-        // create player
-        let mut player = Entity::new();
-        player
-            .set_location(config.player_start_x, config.player_start_y)
-            .set_draw_system(Box::new(PlayerDrawSystem))
-            .set_affected_by_gravity()
-            .set_physics_system(Box::new(PlayerPhysicsSystem::default()))
-            .set_size(config.player_width, config.player_height);
-        // add player to world
+        let player = entity_builder
+            .create_entity()
+            .location(config.player_start_x, config.player_start_y)
+            .size(config.player_width, config.player_height)
+            .draw_system(Box::new(PlayerDrawSystem))
+            .affected_by_gravity()
+            .physics_system(Box::new(PlayerPhysicsSystem::default()))
+            .build();
         world.add_entity(player);
 
         Ok(Self {
             world,
             drawables,
             target_update_fps,
+            entity_builder,
         })
     }
 }
