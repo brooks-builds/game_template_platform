@@ -1,5 +1,6 @@
 pub mod cell;
 pub mod grid;
+pub mod gridv2;
 
 use entity::builder::EntityBuilder;
 use entity::entity_type;
