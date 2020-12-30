@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use eyre::eyre;
 use eyre::Result;
 use ggez::graphics::Rect;
+use ggez::nalgebra::Vector2;
 
 use crate::{entity, Entity};
 
@@ -10,7 +11,6 @@ pub struct Grid {
     width: u32,
     height: u32,
     cells: HashMap<(u32, u32), Vec<u32>>,
-    entities: Vec<Entity>,
     unit_width: f32,
     unit_height: f32,
 }
@@ -19,7 +19,6 @@ impl Grid {
     pub fn new(world_width: f32, world_height: f32, unit_width: f32, unit_height: f32) -> Self {
         let width = (world_width / unit_width) as u32;
         let height = (world_height / unit_height) as u32;
-        let entities = vec![];
         let mut cells = HashMap::new();
         for x in 0..width {
             for y in 0..height {
@@ -31,20 +30,13 @@ impl Grid {
             width,
             height,
             cells,
-            entities,
             unit_width,
             unit_height,
         }
     }
 
-    pub fn insert(&mut self, entity: Entity) -> Result<()> {
+    pub fn insert(&mut self, entity: &Entity) -> Result<()> {
         let coordinates = self.get_coordinates(entity.location.x, entity.location.y);
-
-        // if let Some(cell) = self.cells.get_mut(&coordinates) {
-        //     Ok(())
-        // } else {
-        //     Err(BBErrors::GridCellDoesNotExist.into())
-        // }
 
         let cell = self.cells.get_mut(&coordinates).ok_or_else(|| {
             eyre!(
@@ -54,14 +46,13 @@ impl Grid {
         })?;
 
         cell.push(entity.id);
-        self.entities.push(entity);
 
         Ok(())
     }
 
-    pub fn query(&self, query: Rect) -> Vec<&Entity> {
-        let mut found_entities = vec![];
-
+    /// Get the ids of the entities that are within the query rectangle
+    pub fn query(&self, query: Rect) -> Vec<&u32> {
+        let mut found_ids = vec![];
         let start = self.get_coordinates(query.x, query.y);
         let end = self.get_coordinates(query.x + query.w, query.y + query.h);
 
@@ -74,15 +65,20 @@ impl Grid {
 
         indexes.iter().for_each(|index| {
             if let Some(cell) = self.cells.get(index) {
-                cell.iter().for_each(|id| {
-                    if let Some(entity) = self.entities.iter().find(|entity| entity.id == *id) {
-                        found_entities.push(entity);
-                    }
-                })
+                cell.iter().for_each(|id| found_ids.push(id));
             }
         });
 
-        found_entities
+        found_ids
+    }
+
+    pub fn update_entity_location(&mut self, old_location: Vector2<f32>, entity: &Entity) {
+        let old_coordinates = self.get_coordinates(old_location.x, old_location.y);
+        let new_coordinates = self.get_coordinates(entity.location.x, entity.location.y);
+        if old_coordinates != new_coordinates {
+            // remove the entity id from the old cell
+            // add entity id to new cell
+        }
     }
 
     fn get_coordinates(&self, x: f32, y: f32) -> (u32, u32) {
@@ -96,7 +92,9 @@ impl Grid {
 mod test {
     use ggez::graphics::Rect;
 
+    use crate::draw_system::player_draw_system::PlayerDrawSystem;
     use crate::entity::builder::EntityBuilder;
+    use crate::physics_system::player_physics_system::PlayerPhysicsSystem;
 
     use super::*;
 
@@ -121,9 +119,8 @@ mod test {
         let mut entity_builder = EntityBuilder::new();
         let entity = entity_builder.create_entity().location(3.0, 3.0).build();
         let entity_id = entity.id;
-        grid.insert(entity);
+        grid.insert(&entity);
         assert_eq!(grid.cells.get(&(0, 0)).unwrap()[0], entity_id);
-        assert_eq!(grid.entities[0].id, entity_id);
     }
 
     #[test]
@@ -134,10 +131,24 @@ mod test {
         let entity_to_get = entity_builder.create_entity().location(3.5, 3.6).build();
         let entity_to_not_get = entity_builder.create_entity().location(7.8, 9.1).build();
         let id_to_get = entity_to_get.id;
-        grid.insert(entity_to_get).unwrap();
-        grid.insert(entity_to_not_get).unwrap();
-        let visible_entities: Vec<&Entity> = grid.query(query);
+        grid.insert(&entity_to_get).unwrap();
+        grid.insert(&entity_to_not_get).unwrap();
+        let visible_entities: Vec<&u32> = grid.query(query);
         assert_eq!(visible_entities.len(), 1);
-        assert_eq!(visible_entities[0].id, id_to_get);
+        assert_eq!(visible_entities[0], &id_to_get);
+    }
+
+    #[test]
+    fn ci_test_move_entity_between_cells_in_grid() {
+        let mut grid = Grid::new(10.0, 10.0, 2.0, 2.0);
+        let mut entity_builder = EntityBuilder::new();
+        let mut entity = entity_builder.create_entity().location(1.5, 1.5).build();
+        grid.insert(&entity);
+        let old_location = entity.location;
+        entity.location.x = 2.5;
+        let new_location = entity.location;
+        grid.update_entity_location(old_location, &entity);
+        let coordinates = grid.get_coordinates(entity.location.x, entity.location.y);
+        assert_eq!(grid.cells.get(&coordinates).unwrap().len(), 1);
     }
 }

@@ -1,13 +1,14 @@
 pub mod cell;
-pub mod grid;
 pub mod gridv2;
+
+use std::collections::HashMap;
 
 use entity::builder::EntityBuilder;
 use entity::entity_type;
 use ggez::graphics::Rect;
 use ggez::nalgebra::Vector2;
 use ggez::{Context, GameResult};
-use grid::Grid;
+use gridv2::Grid;
 
 use crate::camera::Camera;
 use crate::drawables::Drawables;
@@ -24,6 +25,7 @@ pub struct World {
     levels: Vec<Level>,
     current_level_index: usize,
     camera: Camera,
+    entities: HashMap<u32, Entity>,
 }
 
 impl World {
@@ -57,7 +59,8 @@ impl World {
 
     pub fn add_entity(&mut self, entity: Entity) {
         if let Some(grid) = &mut self.grid {
-            grid.insert(entity);
+            grid.insert(&entity);
+            self.entities.insert(entity.id, entity);
         }
     }
 
@@ -162,6 +165,7 @@ impl Default for World {
             levels: vec![],
             current_level_index: 0,
             camera: Camera::default(),
+            entities: HashMap::new(),
         }
     }
 }
