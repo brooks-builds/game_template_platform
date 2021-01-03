@@ -2,5 +2,6 @@
 
 members = [
     "demo-pong",
-    "bbggez-utilities"
+    "bbggez-utilities",
+    "bbggez-ecs-world",
 ]

@@ -1,5 +1,5 @@
 [package]
-name = "demo-pong"
+name = "bbggez-ecs-world"
 version = "0.1.0"
 authors = ["Brooks Patton <brooks@brookzerker.com>"]
 edition = "2018"
@@ -7,6 +7,3 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ggez = "0.5.1"
-bbggez-utilities = { path = "../bbggez-utilities" }
-bbggez-ecs-world = { path = "../bbggez-ecs-world" }
