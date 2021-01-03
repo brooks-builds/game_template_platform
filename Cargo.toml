@@ -1,11 +1,6 @@
-[package]
-name = "game_template_platform"
-version = "0.1.0"
-authors = ["Brooks Patton <brooks@brookzerker.com>"]
-edition = "2018"
+[workspace]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-ggez = "0.5.1"
-eyre = "0.6.3"
+members = [
+    "demo-pong",
+    "bbggez-utilities"
+]
