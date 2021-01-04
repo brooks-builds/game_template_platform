@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use bbggez_ecs_world::component::{Component, ComponentDATA};
-use bbggez_ecs_world::system::System;
+use bbggez_ecs_world::component::ComponentData;
 use bbggez_ecs_world::World;
 use ggez::event::EventHandler;
 use ggez::graphics::{DrawMode, BLACK};
@@ -10,7 +9,7 @@ use ggez::{graphics, Context, GameResult};
 use graphics::{DrawParam, Mesh, MeshBuilder, WHITE};
 
 pub struct GameState {
-    world: World<Component>,
+    world: World,
 }
 
 impl GameState {
@@ -21,11 +20,8 @@ impl GameState {
 
         world
             .create_component()
-            .with(
-                "location",
-                Component::new(Box::new(Location { x: 150.0, y: 150.0 })),
-            )
-            .with("size", Component::new(Box::new(Size(10.0))));
+            .with("location", ComponentData::Point { x: 250.0, y: 150.0 })
+            .with("size", ComponentData::Radius(10.0));
 
         Ok(Self { world })
     }
@@ -39,39 +35,25 @@ impl EventHandler for GameState {
     fn draw(&mut self, context: &mut Context) -> GameResult {
         graphics::clear(context, BLACK);
 
+        let locations = self.world.query("location").unwrap();
+        let sizes = self.world.query("size").unwrap();
+
+        for index in 0..self.world.length() {
+            let mesh = MeshBuilder::new()
+                .circle(
+                    DrawMode::fill(),
+                    Point2 {
+                        x: locations[index].get_point().unwrap().0,
+                        y: locations[index].get_point().unwrap().1,
+                    },
+                    sizes[index].get_radius().unwrap(),
+                    0.1,
+                    WHITE,
+                )
+                .build(context)?;
+            graphics::draw(context, &mesh, DrawParam::new())?;
+        }
+
         graphics::present(context)
     }
 }
-
-struct DrawSystem;
-
-impl System for DrawSystem<DATA: ComponentDATA> {
-    fn run(&mut self, data: &mut HashMap<String, DATA>) {
-        let locations = data.get("location").unwrap();
-        let sizes = data.get("sizes").unwrap();
-
-        for index in 0..locations.len() {
-            let location = locations[index];
-            let size = sizes[index];
-            let point = Point2 {
-                x: location.x,
-                y: location.y,
-            };
-            // let mesh = MeshBuilder::new()
-            //     .circle(DrawMode::fill(), &point, sizes[index], 0.1, WHITE)
-            //     .build(context)
-            //     .unwrap();
-        }
-    }
-}
-
-struct Location {
-    x: f32,
-    y: f32,
-}
-
-impl ComponentDATA for Location {}
-
-struct Size(f32);
-
-impl ComponentDATA for Size {}

@@ -1,39 +1,47 @@
 pub mod component;
-pub mod system;
 
 use std::collections::HashMap;
 
-use component::{Component, ComponentDATA};
+use component::ComponentData;
 
-pub struct World<DATA: ComponentDATA> {
-    component_data: HashMap<String, Vec<DATA>>,
+pub struct World {
+    component_data: HashMap<String, Vec<ComponentData>>,
+    components_count: usize,
 }
 
-impl<DATA: ComponentDATA> World<DATA> {
+impl World {
     pub fn new() -> Self {
         Self {
             component_data: HashMap::new(),
+            components_count: 0,
         }
     }
 
     pub fn register(&mut self, name: &str) {
-        let component = vec![];
-        self.component_data.insert(name.to_owned(), component);
+        self.component_data.insert(name.to_owned(), vec![]);
     }
 
     pub fn create_component(&mut self) -> &mut Self {
+        self.component_data
+            .iter_mut()
+            .for_each(|(name, data)| data.push(ComponentData::None));
+        self.components_count += 1;
         self
     }
 
-    pub fn with(&mut self, name: &str, data: DATA) -> &mut Self {
+    pub fn with(&mut self, name: &str, data: ComponentData) -> &mut Self {
         if let Some(component) = self.component_data.get_mut(name) {
-            component.push(data);
+            component[self.components_count - 1] = data;
         }
 
         self
     }
 
-    // pub fn draw<FUNCTION: FnOnce(&Vec<(f32, f32)>, &Vec<f32>)>(&self, closure: FUNCTION) {
-    //     closure(&self.locations, &self.size);
-    // }
+    pub fn query(&self, name: &str) -> Option<&Vec<ComponentData>> {
+        self.component_data.get(name)
+    }
+
+    pub fn length(&self) -> usize {
+        self.components_count
+    }
 }
