@@ -17,7 +17,7 @@ impl ComponentData {
 
     pub fn get_radius(&self) -> Option<f32> {
         match self {
-            ComponentData::Radius(radius) => Some(radius),
+            ComponentData::Radius(radius) => Some(*radius),
             _ => None,
         }
     }
